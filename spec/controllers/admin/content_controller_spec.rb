@@ -671,4 +671,50 @@ describe Admin::ContentController do
 
     end
   end
+
+  describe 'merge articles' do
+
+    describe 'with an user that is not admin' do
+      before :each do
+        Factory(:blog)
+        @user = Factory(:user, :text_filter => Factory(:markdown), :profile => Factory(:profile_publisher))
+        @article = Factory(:article, :user => @user)
+        request.session = {:user => @user.id}
+      end
+
+      it 'should_not see merge button' do
+        get :edit, 'id' => @article.id
+        response.should render_template('new')
+        response.should_not contain("Merge Articles")
+      end
+    end
+
+    describe 'with an user that is admin' do
+      before do
+        Factory(:blog)
+        #TODO delete this after remove fixture
+        Profile.delete_all
+        @user = Factory(:user, :text_filter => Factory(:markdown), :profile => Factory(:profile_admin, :label => Profile::ADMIN))
+        @user.editor = 'simple'
+        @user.save
+        @article = Factory(:article,:user=>@user,:title=>"What a title",:body=>"What a body")
+        @article2 = Factory(:article,:user=>@user,:title=>"What another title",:body=>"What another body")
+        request.session = { :user => @user.id }
+      end
+
+      it 'should see merge button' do
+        get :edit, 'id' => @article.id
+        response.should render_template('new')
+        response.should contain("Merge Articles")
+      end
+
+      it 'should merge articles' do
+        get :edit, 'id' => @article.id
+        response.should render_template('new')
+        response.should contain("Merge Articles")
+        Article.any_instance.should_receive(:merge_with).with(@article2.id)
+        post :merge_with, 'id' => @article.id, 'merge_with' =>  @article2.id
+      end
+    end
+  end
 end
