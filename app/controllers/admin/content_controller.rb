@@ -62,12 +62,11 @@ class Admin::ContentController < Admin::BaseController
     @article = Article.find(params[:id])
     article_to_merge_id = params[:merge_with]
 
-    @article_merged = @article.merge_with(article_to_merge_id)
-
-    if @article_merged
+    begin
+      @article_merged = @article.merge_with(article_to_merge_id)
       flash[:notice] = _("Articles were successfully merged")
       redirect_to :action => 'index'
-    else
+    rescue
       flash[:notice] = _("Articles weren't successfully merged")
       redirect_to :action => 'edit', :id => params[:id]
     end
