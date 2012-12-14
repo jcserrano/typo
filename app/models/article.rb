@@ -122,6 +122,16 @@ class Article < Content
 
   end
 
+  def merge_with(other_article_id)
+    article_to_merge = Article.find(other_article_id)
+    if self or article_to_merge
+      self.body = self.body + "\n\n" + article_to_merge.body
+      self.save!
+      Article.find(other_article_id).destroy
+      return self
+    end
+  end
+
   def year_url
     published_at.year.to_s
   end
