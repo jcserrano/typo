@@ -699,6 +699,7 @@ describe Admin::ContentController do
         @user.save
         @article = Factory(:article,:user=>@user,:title=>"What a title",:body=>"What a body")
         @article2 = Factory(:article,:user=>@user,:title=>"What another title",:body=>"What another body")
+        @article_merged = Factory(:article,:user=>@user,:title=>"What a title",:body=>"What a body\n\nWhat another body")
         request.session = { :user => @user.id }
       end
 
@@ -714,6 +715,33 @@ describe Admin::ContentController do
         response.should contain("Merge Articles")
         Article.any_instance.should_receive(:merge_with).with(@article2.id)
         post :merge_with, 'id' => @article.id, 'merge_with' =>  @article2.id
+      end
+
+      describe 'after merge articles' do
+        before :each do
+          Article.any_instance.stub(:merge_with).with(@article2.id).and_return(@article_merged)
+          post :merge_with, 'id' => @article.id, 'merge_with' =>  @article2.id
+        end
+
+        it 'should add the body of the second article to the current article' do
+          @article_merged.body.should == (@article.body + "\n\n" + @article2.body)
+        end
+
+        it 'should contain the title of the current article' do
+          @article_merged.title.should == @article.title
+        end
+
+        it 'should contain the comments of both articles' do
+          @article_merged.comments.should == (@article.comments << @article2.comments)
+        end
+
+        it 'should contain the author of the current article' do
+          @article_merged.author.should == @article.author
+        end
+
+        it 'should redirect to the content page' do
+          response.should redirect_to('/admin/content')
+        end
       end
     end
   end

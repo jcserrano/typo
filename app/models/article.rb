@@ -124,8 +124,9 @@ class Article < Content
 
   def merge_with(other_article_id)
     article_to_merge = Article.find(other_article_id)
-    if self or article_to_merge
+    if self and article_to_merge
       self.body = self.body + "\n\n" + article_to_merge.body
+      self.comments << article_to_merge.comments
       self.save!
       Article.find(other_article_id).destroy
       return self
